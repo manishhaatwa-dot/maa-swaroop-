@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://maaswaroopglasshousepali.digiprofiles.in/sitemap.xml
+Sitemap: https://maa-swaroop-glass-house-pali.digiprofiles.in/sitemap.xml
