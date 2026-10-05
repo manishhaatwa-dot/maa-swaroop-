@@ -2334,3 +2334,14 @@ body.page-loaded {
     }
 
 }
+
+/* =========================================================
+   REVEAL SAFETY FIX
+   Content should remain visible
+   ========================================================= */
+
+.reveal {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
