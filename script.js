@@ -36,7 +36,9 @@ function setupReveal() {
 
     const items = document.querySelectorAll(".reveal");
 
-    if (!items.length) return;
+    if (!items.length) {
+        return;
+    }
 
     if (!("IntersectionObserver" in window)) {
 
@@ -64,7 +66,7 @@ function setupReveal() {
 
         },
         {
-            threshold: 0.10
+            threshold: 0.08
         }
     );
 
@@ -84,7 +86,9 @@ const siteHeader =
 
 function updateHeader() {
 
-    if (!siteHeader) return;
+    if (!siteHeader) {
+        return;
+    }
 
     if (window.scrollY > 20) {
 
@@ -101,7 +105,9 @@ function updateHeader() {
 window.addEventListener(
     "scroll",
     updateHeader,
-    { passive: true }
+    {
+        passive: true
+    }
 );
 
 updateHeader();
@@ -118,12 +124,16 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
         const id =
             link.getAttribute("href");
 
-        if (!id || id === "#") return;
+        if (!id || id === "#") {
+            return;
+        }
 
         const target =
             document.querySelector(id);
 
-        if (!target) return;
+        if (!target) {
+            return;
+        }
 
         event.preventDefault();
 
@@ -144,13 +154,12 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 const GITHUB_API =
     "https://api.github.com/repos/manishhaatwa-dot/maa-swaroop-/contents/assets/products/category";
 
-
 const GITHUB_RAW =
     "https://raw.githubusercontent.com/manishhaatwa-dot/maa-swaroop-/main/assets/products/category";
 
 
 /* =========================================================
-   FORMAT CATEGORY NAME
+   CATEGORY NAME
    ========================================================= */
 
 function formatCategoryName(name) {
@@ -163,21 +172,7 @@ function formatCategoryName(name) {
 
 
 /* =========================================================
-   FORMAT PHOTO NAME
-   ========================================================= */
-
-function formatPhotoName(name) {
-
-    return name
-        .replace(/\.[^/.]+$/, "")
-        .replace(/[-_]+/g, " ")
-        .replace(/\b\w/g, letter => letter.toUpperCase());
-
-}
-
-
-/* =========================================================
-   CHECK IMAGE FILE
+   IMAGE CHECK
    ========================================================= */
 
 function isImage(fileName) {
@@ -188,12 +183,11 @@ function isImage(fileName) {
 
 
 /* =========================================================
-   CREATE WORK CARD
+   CREATE PHOTO CARD
    ========================================================= */
 
 function createWorkCard(
     imageUrl,
-    photoName,
     categoryName
 ) {
 
@@ -203,31 +197,21 @@ function createWorkCard(
     card.className =
         "product-card reveal";
 
+
     card.innerHTML = `
 
         <div class="product-image-wrap">
 
             <img
                 src="${imageUrl}"
-                alt="${photoName} - ${categoryName} - Maa Swaroop Glass House Pali"
+                alt="${categoryName} - Maa Swaroop Glass House Pali"
                 loading="lazy"
             >
 
         </div>
 
-        <div class="product-card-content">
-
-            <span class="product-category">
-                ${categoryName}
-            </span>
-
-            <h3>
-                ${photoName}
-            </h3>
-
-        </div>
-
     `;
+
 
     return card;
 
@@ -235,12 +219,11 @@ function createWorkCard(
 
 
 /* =========================================================
-   CREATE GALLERY ITEM
+   CREATE GALLERY IMAGE
    ========================================================= */
 
 function createGalleryItem(
     imageUrl,
-    photoName,
     categoryName
 ) {
 
@@ -259,27 +242,17 @@ function createGalleryItem(
     item.rel =
         "noopener";
 
+
     item.innerHTML = `
 
         <img
             src="${imageUrl}"
-            alt="${photoName} - ${categoryName} - Maa Swaroop Glass House"
+            alt="${categoryName} - Maa Swaroop Glass House"
             loading="lazy"
         >
 
-        <span class="gallery-overlay">
-
-            <strong>
-                ${photoName}
-            </strong>
-
-            <small>
-                ${categoryName}
-            </small>
-
-        </span>
-
     `;
+
 
     return item;
 
@@ -287,7 +260,7 @@ function createGalleryItem(
 
 
 /* =========================================================
-   LOAD WORK
+   LOAD WORK CATEGORIES
    ========================================================= */
 
 async function loadWork() {
@@ -299,16 +272,18 @@ async function loadWork() {
         document.getElementById("galleryGrid");
 
 
-    if (!productGrid) return;
+    if (!productGrid) {
+        return;
+    }
 
 
     try {
 
-        /*
-         * Get category folders
-         */
+        /* -----------------------------------------------
+           GET CATEGORY FOLDERS
+           ----------------------------------------------- */
 
-        const categoryResponse =
+        const response =
             await fetch(
                 GITHUB_API,
                 {
@@ -317,50 +292,51 @@ async function loadWork() {
             );
 
 
-        if (!categoryResponse.ok) {
+        if (!response.ok) {
 
             throw new Error(
-                "GitHub category folder could not be loaded."
+                "Unable to load GitHub categories."
             );
 
         }
 
 
         const categories =
-            await categoryResponse.json();
+            await response.json();
 
-
-        /*
-         * Only folders
-         */
 
         const categoryFolders =
-            categories.filter(item =>
-                item.type === "dir"
-            );
+            categories.filter(item => {
+
+                return item.type === "dir";
+
+            });
 
 
         productGrid.innerHTML = "";
 
 
         if (galleryGrid) {
+
             galleryGrid.innerHTML = "";
+
         }
 
 
-        /*
-         * Open every category
-         */
+        /* -----------------------------------------------
+           EACH CATEGORY
+           ----------------------------------------------- */
 
         for (const category of categoryFolders) {
 
-            const categoryPath =
+
+            const categoryUrl =
                 `${GITHUB_API}/${encodeURIComponent(category.name)}`;
 
 
             const categoryResponse =
                 await fetch(
-                    categoryPath,
+                    categoryUrl,
                     {
                         cache: "no-store"
                     }
@@ -377,21 +353,24 @@ async function loadWork() {
 
 
             const images =
-                files.filter(file =>
-                    file.type === "file" &&
-                    isImage(file.name)
-                );
+                files.filter(file => {
 
+                    return (
+                        file.type === "file" &&
+                        isImage(file.name)
+                    );
 
-            /*
-             * If category has no images,
-             * skip it.
-             */
+                });
+
 
             if (!images.length) {
                 continue;
             }
 
+
+            /* -------------------------------------------
+               CATEGORY NAME
+               ------------------------------------------- */
 
             const categoryName =
                 formatCategoryName(
@@ -399,12 +378,13 @@ async function loadWork() {
                 );
 
 
-            /*
-             * Category wrapper
-             */
+            /* -------------------------------------------
+               CATEGORY SECTION
+               ------------------------------------------- */
 
             const categorySection =
                 document.createElement("div");
+
 
             categorySection.className =
                 "work-category reveal";
@@ -414,23 +394,14 @@ async function loadWork() {
 
                 <div class="work-category-heading">
 
-                    <span class="category-line"></span>
-
-                    <div>
-
-                        <span class="category-label">
-                            OUR WORK
-                        </span>
-
-                        <h3>
-                            ${categoryName}
-                        </h3>
-
-                    </div>
+                    <h3>
+                        ${categoryName}
+                    </h3>
 
                 </div>
 
-                <div class="category-product-grid"></div>
+                <div class="category-product-grid">
+                </div>
 
             `;
 
@@ -441,30 +412,20 @@ async function loadWork() {
                 );
 
 
-            /*
-             * Add every image
-             */
+            /* -------------------------------------------
+               CATEGORY PHOTOS
+               ------------------------------------------- */
 
             images.forEach(file => {
+
 
                 const imageUrl =
                     `${GITHUB_RAW}/${encodeURIComponent(category.name)}/${encodeURIComponent(file.name)}`;
 
 
-                const photoName =
-                    formatPhotoName(
-                        file.name
-                    );
-
-
-                /*
-                 * Product card
-                 */
-
                 const card =
                     createWorkCard(
                         imageUrl,
-                        photoName,
                         categoryName
                     );
 
@@ -472,16 +433,15 @@ async function loadWork() {
                 categoryGrid.appendChild(card);
 
 
-                /*
-                 * Gallery
-                 */
+                /* ---------------------------------------
+                   GALLERY
+                   --------------------------------------- */
 
                 if (galleryGrid) {
 
                     const galleryItem =
                         createGalleryItem(
                             imageUrl,
-                            photoName,
                             categoryName
                         );
 
@@ -502,9 +462,9 @@ async function loadWork() {
         }
 
 
-        /*
-         * If nothing found
-         */
+        /* -----------------------------------------------
+           NO PHOTOS
+           ----------------------------------------------- */
 
         if (!productGrid.children.length) {
 
