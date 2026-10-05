@@ -2345,3 +2345,142 @@ body.page-loaded {
     visibility: visible !important;
     transform: none !important;
 }
+/* =========================================================
+   CATEGORY-WISE WORK LAYOUT
+   ========================================================= */
+
+#productGrid {
+    display: block !important;
+    width: 100%;
+}
+
+.work-category {
+    display: block !important;
+    width: 100%;
+    margin-bottom: 70px;
+}
+
+.work-category-heading {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.work-category-heading .category-line {
+    display: block;
+    width: 5px;
+    height: 48px;
+    background: var(--blue, #173f68);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.work-category-heading .category-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    color: #173f68;
+}
+
+.work-category-heading h3 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    color: #26323d;
+}
+
+/* Only images belonging to this category */
+
+.category-product-grid {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+    align-items: start;
+}
+
+/* Product card */
+
+.category-product-grid .product-card {
+    width: 100%;
+    margin: 0;
+}
+
+/* Image */
+
+.category-product-grid .product-image-wrap {
+    width: 100%;
+    height: 280px;
+    overflow: hidden;
+    border-radius: 22px;
+    background: #f3f5f7;
+}
+
+.category-product-grid .product-image-wrap img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+/* Card text */
+
+.category-product-grid .product-card-content {
+    padding: 14px 4px 0;
+}
+
+.category-product-grid .product-category {
+    display: none;
+}
+
+.category-product-grid .product-card-content h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #26323d;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .category-product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .work-category {
+        margin-bottom: 48px;
+    }
+
+    .work-category-heading {
+        margin-bottom: 18px;
+    }
+
+    .work-category-heading h3 {
+        font-size: 24px;
+    }
+
+    .category-product-grid {
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+
+    .category-product-grid .product-image-wrap {
+        height: 240px;
+        border-radius: 18px;
+    }
+
+}
