@@ -1,8 +1,20 @@
 /* =========================================================
-   MAA KALP GLASS HOUSE
-   Glass • Aluminium • Stainless Steel Works
+   MAA SWAROOP GLASS HOUSE
+   Dynamic Category-Based Work Gallery
    DigiProfiles.in
    ========================================================= */
+
+
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
+
+const GITHUB_API =
+    "https://api.github.com/repos/manishhaatwa-dot/maa-swaroop-/contents/assets/products";
+
+
+const GITHUB_RAW =
+    "https://raw.githubusercontent.com/manishhaatwa-dot/maa-swaroop-/main/assets/products";
 
 
 /* =========================================================
@@ -12,36 +24,21 @@
 const menuToggle = document.getElementById("menuToggle");
 const mainNav = document.getElementById("mainNav");
 
+
 if (menuToggle && mainNav) {
 
     menuToggle.addEventListener("click", () => {
 
         mainNav.classList.toggle("active");
 
-        const isOpen =
-            mainNav.classList.contains("active");
-
-        menuToggle.setAttribute(
-            "aria-label",
-            isOpen ? "Close Menu" : "Open Menu"
-        );
-
     });
 
 
-    const navLinks =
-        mainNav.querySelectorAll("a");
-
-    navLinks.forEach(link => {
+    mainNav.querySelectorAll("a").forEach(link => {
 
         link.addEventListener("click", () => {
 
             mainNav.classList.remove("active");
-
-            menuToggle.setAttribute(
-                "aria-label",
-                "Open Menu"
-            );
 
         });
 
@@ -54,184 +51,282 @@ if (menuToggle && mainNav) {
    SCROLL REVEAL
    ========================================================= */
 
-const revealElements =
-    document.querySelectorAll(".reveal");
+function setupReveal() {
+
+    const revealItems =
+        document.querySelectorAll(".reveal");
 
 
-const revealOnScroll = () => {
+    if (!("IntersectionObserver" in window)) {
 
-    const windowHeight =
-        window.innerHeight;
+        revealItems.forEach(item => {
 
+            item.classList.add("visible");
 
-    revealElements.forEach(element => {
-
-        const elementTop =
-            element.getBoundingClientRect().top;
-
-
-        if (elementTop < windowHeight - 80) {
-
-            element.classList.add("active");
-
-        }
-
-    });
-
-};
-
-
-revealOnScroll();
-
-
-window.addEventListener(
-    "scroll",
-    revealOnScroll,
-    { passive: true }
-);
-
-
-/* =========================================================
-   SMOOTH INTERNAL LINKS
-   ========================================================= */
-
-document
-    .querySelectorAll('a[href^="#"]')
-    .forEach(link => {
-
-        link.addEventListener(
-            "click",
-            function (event) {
-
-                const targetId =
-                    this.getAttribute("href");
-
-
-                /*
-                 * Pending links such as href="#"
-                 * should do nothing.
-                 */
-
-                if (
-                    !targetId ||
-                    targetId === "#"
-                ) {
-
-                    event.preventDefault();
-
-                    return;
-
-                }
-
-
-                const target =
-                    document.querySelector(targetId);
-
-
-                if (!target) {
-
-                    return;
-
-                }
-
-
-                event.preventDefault();
-
-
-                const header =
-                    document.querySelector(
-                        ".site-header"
-                    );
-
-
-                const headerHeight =
-                    header
-                        ? header.offsetHeight
-                        : 0;
-
-
-                const targetPosition =
-                    target.getBoundingClientRect().top +
-                    window.scrollY -
-                    headerHeight;
-
-
-                window.scrollTo({
-
-                    top: targetPosition,
-
-                    behavior: "smooth"
-
-                });
-
-            }
-        );
-
-    });
-
-
-/* =========================================================
-   HEADER SHADOW
-   ========================================================= */
-
-const header =
-    document.querySelector(".site-header");
-
-
-const updateHeader = () => {
-
-    if (!header) {
+        });
 
         return;
 
     }
 
 
-    if (window.scrollY > 20) {
+    const observer =
+        new IntersectionObserver(
+            entries => {
 
-        header.style.boxShadow =
-            "0 8px 25px rgba(30, 55, 75, 0.10)";
+                entries.forEach(entry => {
 
-    } else {
+                    if (entry.isIntersecting) {
 
-        header.style.boxShadow =
-            "none";
+                        entry.target.classList.add("visible");
 
-    }
+                        observer.unobserve(entry.target);
 
-};
+                    }
+
+                });
+
+            },
+            {
+                threshold: 0.12
+            }
+        );
 
 
-updateHeader();
+    revealItems.forEach(item => {
 
+        observer.observe(item);
 
-window.addEventListener(
-    "scroll",
-    updateHeader,
-    { passive: true }
-);
+    });
+
+}
 
 
 /* =========================================================
-   DYNAMIC PRODUCTS
-   =========================================================
-
-   products.json se jitni images milengi,
-   utne hi product cards automatically banenge.
-
-   Koi fixed 10/20/50 limit nahi hai.
-
+   CATEGORY NAME
    ========================================================= */
 
-const productGrid =
-    document.getElementById("productGrid");
+function formatCategoryName(folderName) {
+
+    return folderName
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, letter => letter.toUpperCase());
+
+}
 
 
-const galleryGrid =
-    document.getElementById("galleryGrid");
+/* =========================================================
+   IMAGE NAME
+   ========================================================= */
+
+function formatImageName(fileName) {
+
+    return fileName
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, letter => letter.toUpperCase());
+
+}
 
 
-const loadProducts = async () => {
+/* =========================================================
+   GET IMAGE FILES FROM CATEGORY
+   ========================================================= */
+
+async function getCategoryImages(categoryName) {
+
+    const url =
+        `${GITHUB_API}/${encodeURIComponent(categoryName)}`;
+
+
+    try {
+
+        const response = await fetch(url, {
+            cache: "no-store"
+        });
+
+
+        if (!response.ok) {
+
+            console.warn(
+                `Unable to load category: ${categoryName}`
+            );
+
+            return [];
+
+        }
+
+
+        const files = await response.json();
+
+
+        return files.filter(file => {
+
+            return (
+                file.type === "file" &&
+                /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name)
+            );
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            `Category loading error: ${categoryName}`,
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+/* =========================================================
+   CREATE IMAGE CARD
+   ========================================================= */
+
+function createWorkCard(
+    imageUrl,
+    imageName,
+    categoryName
+) {
+
+    const card =
+        document.createElement("article");
+
+    card.className =
+        "product-card reveal";
+
+
+    card.innerHTML = `
+
+        <div class="product-image-wrap">
+
+            <img
+                src="${imageUrl}"
+                alt="${imageName} - ${categoryName} - Maa Swaroop Glass House Pali"
+                loading="lazy"
+            >
+
+        </div>
+
+        <div class="product-card-content">
+
+            <span class="product-category">
+                ${categoryName}
+            </span>
+
+            <h3>
+                ${imageName}
+            </h3>
+
+        </div>
+
+    `;
+
+
+    return card;
+
+}
+
+
+/* =========================================================
+   CREATE CATEGORY SECTION
+   ========================================================= */
+
+function createCategorySection(
+    categoryName,
+    files
+) {
+
+    const section =
+        document.createElement("div");
+
+    section.className =
+        "work-category reveal";
+
+
+    const heading =
+        document.createElement("div");
+
+    heading.className =
+        "work-category-heading";
+
+
+    heading.innerHTML = `
+
+        <span class="category-line"></span>
+
+        <div>
+
+            <span class="category-label">
+                OUR WORK
+            </span>
+
+            <h3>
+                ${categoryName}
+            </h3>
+
+        </div>
+
+    `;
+
+
+    const grid =
+        document.createElement("div");
+
+    grid.className =
+        "category-product-grid";
+
+
+    files.forEach(file => {
+
+        const imageUrl =
+            `${GITHUB_RAW}/${encodeURIComponent(categoryName.toLowerCase())}/${encodeURIComponent(file.name)}`;
+
+
+        const imageName =
+            formatImageName(file.name);
+
+
+        const card =
+            createWorkCard(
+                imageUrl,
+                imageName,
+                categoryName
+            );
+
+
+        grid.appendChild(card);
+
+    });
+
+
+    section.appendChild(heading);
+
+    section.appendChild(grid);
+
+
+    return section;
+
+}
+
+
+/* =========================================================
+   LOAD ALL CATEGORIES
+   ========================================================= */
+
+async function loadProducts() {
+
+    const productGrid =
+        document.getElementById("productGrid");
+
+
+    const galleryGrid =
+        document.getElementById("galleryGrid");
+
 
     if (!productGrid) {
 
@@ -240,36 +335,65 @@ const loadProducts = async () => {
     }
 
 
+    productGrid.innerHTML = `
+
+        <div class="work-loading">
+
+            <span class="loading-spinner"></span>
+
+            <p>
+                Loading our work...
+            </p>
+
+        </div>
+
+    `;
+
+
     try {
 
         const response =
-            await fetch("products.json");
+            await fetch(
+                GITHUB_API,
+                {
+                    cache: "no-store"
+                }
+            );
 
 
         if (!response.ok) {
 
             throw new Error(
-                "products.json could not be loaded."
+                "Unable to read GitHub products folder."
             );
 
         }
 
 
-        const products =
+        const items =
             await response.json();
 
 
-        if (
-            !Array.isArray(products) ||
-            products.length === 0
-        ) {
+        const categories =
+            items.filter(item => {
+
+                return item.type === "dir";
+
+            });
+
+
+        if (!categories.length) {
 
             productGrid.innerHTML = `
-                <div class="product-empty">
+
+                <div class="work-empty">
+
                     <p>
-                        Our latest work will be displayed here.
+                        Work photos will be added soon.
                     </p>
+
                 </div>
+
             `;
 
             return;
@@ -281,130 +405,93 @@ const loadProducts = async () => {
 
 
         /*
-         * Create one product card
-         * for every item in products.json.
+         * Load every category.
          */
 
-        products.forEach(
-            (product, index) => {
+        for (const category of categories) {
 
-                if (
-                    !product ||
-                    !product.image
-                ) {
-
-                    return;
-
-                }
+            const files =
+                await getCategoryImages(
+                    category.name
+                );
 
 
-                const card =
-                    document.createElement("article");
+            if (!files.length) {
 
-
-                card.className =
-                    "product-card reveal";
-
-
-                const productName =
-                    product.name ||
-                    "Glass & Fabrication Work";
-
-
-                const description =
-                    product.description ||
-                    "Quality glass, aluminium and stainless-steel work.";
-
-
-                const imagePath =
-                    "assets/products/" +
-                    product.image;
-
-
-                card.innerHTML = `
-
-                    <div class="product-image">
-
-                        <img
-                            src="${imagePath}"
-                            alt="${escapeHtml(productName)}"
-                            loading="lazy"
-                        >
-
-                    </div>
-
-
-                    <div class="product-content">
-
-                        <span class="product-number">
-
-                            ${String(index + 1).padStart(2, "0")}
-
-                        </span>
-
-
-                        <h3>
-                            ${escapeHtml(productName)}
-                        </h3>
-
-
-                        <p>
-                            ${escapeHtml(description)}
-                        </p>
-
-                    </div>
-
-                `;
-
-
-                productGrid.appendChild(card);
+                continue;
 
             }
-        );
 
 
-        /*
-         * Gallery uses the same actual work photos.
-         */
-
-        if (galleryGrid) {
-
-            galleryGrid.innerHTML = "";
+            const categoryTitle =
+                formatCategoryName(
+                    category.name
+                );
 
 
-            products.forEach(
-                product => {
+            const categorySection =
+                createCategorySection(
+                    categoryTitle,
+                    files
+                );
 
-                    if (
-                        !product ||
-                        !product.image
-                    ) {
 
-                        return;
+            productGrid.appendChild(
+                categorySection
+            );
 
-                    }
+
+            /*
+             * Gallery images
+             */
+
+            if (galleryGrid) {
+
+                files.forEach(file => {
+
+                    const imageUrl =
+                        `${GITHUB_RAW}/${encodeURIComponent(category.name.toLowerCase())}/${encodeURIComponent(file.name)}`;
 
 
                     const galleryItem =
-                        document.createElement("div");
+                        document.createElement("a");
 
 
                     galleryItem.className =
                         "gallery-item reveal";
 
 
-                    const productName =
-                        product.name ||
-                        "Maa Kalp Glass House Work";
+                    galleryItem.href =
+                        imageUrl;
+
+
+                    galleryItem.target =
+                        "_blank";
+
+
+                    galleryItem.rel =
+                        "noopener";
 
 
                     galleryItem.innerHTML = `
 
                         <img
-                            src="assets/products/${product.image}"
-                            alt="${escapeHtml(productName)}"
+                            src="${imageUrl}"
+                            alt="${formatImageName(file.name)} - Maa Swaroop Glass House"
                             loading="lazy"
                         >
+
+                        <span class="gallery-overlay">
+
+                            <strong>
+                                ${formatImageName(file.name)}
+                            </strong>
+
+                            <small>
+                                ${formatCategoryName(category.name)}
+                            </small>
+
+                        </span>
 
                     `;
 
@@ -413,144 +500,165 @@ const loadProducts = async () => {
                         galleryItem
                     );
 
-                }
-            );
+                });
+
+            }
 
         }
 
 
-        /*
-         * New reveal elements need to be checked
-         * after dynamic cards are created.
-         */
-
-        revealOnScroll();
+        setupReveal();
 
 
         /*
-         * Add image load class to dynamic images.
+         * Check whether any category produced images.
          */
 
-        const dynamicImages =
-            document.querySelectorAll(
-                "#productGrid img, #galleryGrid img"
-            );
+        if (!productGrid.children.length) {
 
+            productGrid.innerHTML = `
 
-        dynamicImages.forEach(image => {
+                <div class="work-empty">
 
-            if (image.complete) {
+                    <p>
+                        Work photos will be added soon.
+                    </p>
 
-                image.classList.add(
-                    "image-loaded"
-                );
+                </div>
 
-            } else {
+            `;
 
-                image.addEventListener(
-                    "load",
-                    () => {
+        }
 
-                        image.classList.add(
-                            "image-loaded"
-                        );
-
-                    },
-                    { once: true }
-                );
-
-            }
-
-        });
 
     } catch (error) {
 
         console.error(
-            "Products loading error:",
+            "Work loading error:",
             error
         );
 
 
         productGrid.innerHTML = `
-            <div class="product-empty">
+
+            <div class="work-empty">
+
                 <p>
-                    Our work images will be available soon.
+                    Work photos are currently unavailable.
                 </p>
+
             </div>
+
         `;
 
     }
-
-};
-
-
-/* =========================================================
-   HTML ESCAPE
-   ========================================================= */
-
-function escapeHtml(value) {
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
 
 }
 
 
 /* =========================================================
-   IMAGE LOAD EFFECT
+   SMOOTH INTERNAL LINKS
    ========================================================= */
 
-const images =
-    document.querySelectorAll("img");
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+
+    link.addEventListener("click", event => {
+
+        const targetId =
+            link.getAttribute("href");
 
 
-images.forEach(image => {
+        if (
+            !targetId ||
+            targetId === "#"
+        ) {
 
-    if (image.complete) {
+            return;
 
-        image.classList.add(
-            "image-loaded"
+        }
+
+
+        const target =
+            document.querySelector(targetId);
+
+
+        if (!target) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    });
+
+});
+
+
+/* =========================================================
+   HEADER SHADOW
+   ========================================================= */
+
+const siteHeader =
+    document.querySelector(".site-header");
+
+
+function updateHeader() {
+
+    if (!siteHeader) {
+
+        return;
+
+    }
+
+
+    if (window.scrollY > 20) {
+
+        siteHeader.classList.add(
+            "scrolled"
         );
 
     } else {
 
-        image.addEventListener(
-            "load",
-            () => {
-
-                image.classList.add(
-                    "image-loaded"
-                );
-
-            },
-            { once: true }
+        siteHeader.classList.remove(
+            "scrolled"
         );
 
     }
+
+}
+
+
+window.addEventListener(
+    "scroll",
+    updateHeader,
+    {
+        passive: true
+    }
+);
+
+
+updateHeader();
+
+
+/* =========================================================
+   IMAGE LOAD HANDLING
+   ========================================================= */
+
+document.querySelectorAll("img").forEach(image => {
+
+    image.addEventListener("load", () => {
+
+        image.classList.add("loaded");
+
+    });
 
 });
 
@@ -574,26 +682,16 @@ yearElements.forEach(element => {
 
 
 /* =========================================================
-   PAGE READY
+   PAGE START
    ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
 
-        document.body.classList.add(
-            "page-loaded"
-        );
-
-
-        /*
-         * Load all work photos.
-         */
-
         loadProducts();
 
-
-        revealOnScroll();
+        setupReveal();
 
     }
 );
